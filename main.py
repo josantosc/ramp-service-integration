@@ -1,8 +1,10 @@
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.routing import APIRoute
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 import logfire
+import logging
 
 from app.api.main import api_router
 from app.core.config import settings
@@ -11,6 +13,8 @@ from app.core.config import settings
 def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
 
+
+logger = logging.getLogger("integrations service")
 
 logfire.configure(send_to_logfire='if-token-present', token=settings.LOGFIRE_TOKEN, )
 
@@ -31,8 +35,21 @@ if settings.BACKEND_CORS_ORIGINS:
 else:
     allow_origins = ["*"]
 
+
+class IgnoreReadinessProbeMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        if request.url.path == "/":
+            # Ignora o readiness probe sem logar
+            return await call_next(request)
+        # Loga requisições para outros endpoints
+        response = await call_next(request)
+        logger.info(f"Request path: {request.url.path} status code: {response.status_code}")
+        return response
+
+
 app.add_middleware(
     CORSMiddleware,
+    IgnoreReadinessProbeMiddleware,
     allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
@@ -42,9 +59,9 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
-"""@app.get("/")
+@app.get("/")
 async def readines_probe():
-    return {"status": "ready"}"""
+    return {"status": "ready"}
 
 
 if __name__ == "__main__":
