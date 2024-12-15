@@ -16,7 +16,7 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 logger = logging.getLogger("integrations service")
 
-logfire.configure(send_to_logfire='if-token-present', token=settings.LOGFIRE_TOKEN, )
+
 
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
@@ -27,7 +27,7 @@ app = FastAPI(
     #generate_unique_id_function=custom_generate_unique_id,
 )
 
-
+logfire.instrument_fastapi(app)
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
@@ -43,11 +43,10 @@ class IgnoreReadinessProbeMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         # Loga requisições para outros endpoints
         response = await call_next(request)
-
-        logfire.instrument_fastapi(app)
-
+        logfire.configure(send_to_logfire='if-token-present', token=settings.LOGFIRE_TOKEN, )
         logger.info(f"Request path: {request.url.path} status code: {response.status_code}")
         return response
+
 
 app.add_middleware(IgnoreReadinessProbeMiddleware)
 
