@@ -33,7 +33,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/",
+    "/balle/",
     dependencies=[Depends(get_current_active_superuser)]
 )
 async def get_disponibilidade(session: SessionDep, skip: int = 0, limit: int = 100,
@@ -50,29 +50,10 @@ async def get_disponibilidade(session: SessionDep, skip: int = 0, limit: int = 1
         tpAgd=params.tpAgd,
     )
 
-
-@router.get("", response_model=UserPublic)
-def horarios_disponiveis(
-        user_id: int, session: SessionDep, current_user: CurrentUser
-) -> Any:
-    """
-    Get a specific user by id.
-    """
-    user = session.get(Users, user_id)
-    if user == current_user:
-        return user
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=403,
-            detail="The user doesn't have enough privileges",
-        )
-    return user
-
-
 @router.post(
-    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
+    "/balle/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
 )
-def create_user_db(*, session: SessionDep, user_in: UserCreate) -> Any:
+def create_agendamento(*, session: SessionDep, user_in: UserCreate) -> Any:
     """
     Create new user.
     """
