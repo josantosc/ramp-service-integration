@@ -14,9 +14,7 @@ def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
 
 
-logger = logging.getLogger("integrations service")
-
-
+logfire.configure(send_to_logfire='if-token-present', token=settings.LOGFIRE_TOKEN, )
 
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
@@ -35,20 +33,13 @@ if settings.BACKEND_CORS_ORIGINS:
 else:
     allow_origins = ["*"]
 
-
-class IgnoreReadinessProbeMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
-        if request.url.path == "/":
-            # Ignora o readiness probe sem logar
-            return await call_next(request)
-        # Loga requisições para outros endpoints
-        response = await call_next(request)
-        logfire.configure(send_to_logfire='if-token-present', token=settings.LOGFIRE_TOKEN, )
-        logger.info(f"Request path: {request.url.path} status code: {response.status_code}")
-        return response
-
-
-app.add_middleware(IgnoreReadinessProbeMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
