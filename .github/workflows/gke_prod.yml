@@ -51,5 +51,5 @@ jobs:
          IMAGE_FULL_PATH="${{ secrets.GREPO_LOCATION }}-docker.pkg.dev/${{ secrets.GKE_PROJECT_ID }}/${{ secrets.GKE_REPOSITORY }}/$IMAGE_NAME:$TAG"
       
          echo "Substituindo a imagem: $IMAGE_FULL_PATH"
-         sed -i "s|<IMAGE-NEREUS>|$IMAGE_FULL_PATH|" $GITHUB_WORKSPACE/k8s/gke/service-integrations/service-integrations-rmp-deployment.yml
-         kubectl apply -f $GITHUB_WORKSPACE/k8s/gke/service-integrations/service-integrations-rmp-deployment.yml
+         sed -i "s|<IMAGE-INTEGRATIONS-SERVICE>|$IMAGE_FULL_PATH|" $GITHUB_WORKSPACE/k8s/gke/integrations-service/service-integrations-rmp-deployment.yml
+         kubectl apply -f $GITHUB_WORKSPACE/k8s/gke/integrations-service/service-integrations-rmp-deployment.yml
