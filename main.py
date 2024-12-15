@@ -42,9 +42,9 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
-@app.get("/")
+"""@app.get("/")
 async def readines_probe():
-    return {"status": "ready"}
+    return {"status": "ready"}"""
 
 
 if __name__ == "__main__":
