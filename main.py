@@ -12,7 +12,7 @@ def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
 
 
-logfire.configure(send_to_logfire='if-token-present')
+logfire.configure(send_to_logfire='if-token-present', token=settings.LOGFIRE_TOKEN, )
 
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
