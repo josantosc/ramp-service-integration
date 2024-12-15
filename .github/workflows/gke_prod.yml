@@ -1,0 +1,55 @@
+name: Build and Deploy to GKE
+on:
+  push:
+    branches: [ "master"]
+env:
+  IMAGE: nereus
+
+jobs:
+  setup-build-publish-deploy:
+    name: 'Setup, Build, Publish, and Deploy - Integrations'
+    runs-on: 'ubuntu-latest'
+    environment: 'production'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GKE_CREDENTIALS }}'
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER }}
+          location: ${{ secrets.GKE_LOCATION }}
+
+
+      - name: Docker login
+        run: |
+          echo '${{ secrets.GKE_CREDENTIALS }}' > temp_google_key.json
+          echo '${{ secrets.GREPO_LOCATION }}' > temp_google_location.json
+          cat temp_google_key.json
+          cat temp_google_key.json | docker login -u _json_key --password-stdin 'https://${{ secrets.GREPO_LOCATION }}-docker.pkg.dev'
+
+      - name: Build container image
+        run: |
+          docker build --tag ${{ secrets.GREPO_LOCATION }}-docker.pkg.dev/${{ secrets.GKE_PROJECT_ID }}/${{ secrets.GKE_REPOSITORY }}/$IMAGE:$(echo $GITHUB_SHA | cut -c1-7) .
+
+      - name: Push Docker image
+        run: |
+          docker push us-docker.pkg.dev/${{ secrets.GKE_PROJECT_ID }}/api-repository/$IMAGE:$(echo $GITHUB_SHA | cut -c1-7)
+
+      - name: Deploy to GKE
+        run: |
+         TAG=$(echo $GITHUB_SHA | cut -c1-7)
+         IMAGE_NAME=$(echo $IMAGE | tr '[:upper:]' '[:lower:]')
+         IMAGE_FULL_PATH="${{ secrets.GREPO_LOCATION }}-docker.pkg.dev/${{ secrets.GKE_PROJECT_ID }}/${{ secrets.GKE_REPOSITORY }}/$IMAGE_NAME:$TAG"
+      
+         echo "Substituindo a imagem: $IMAGE_FULL_PATH"
+         sed -i "s|<IMAGE-NEREUS>|$IMAGE_FULL_PATH|" $GITHUB_WORKSPACE/k8s/gke/service-integrations/service-integrations-rmp-deployment.yml
+         kubectl apply -f $GITHUB_WORKSPACE/k8s/gke/service-integrations/service-integrations-rmp-deployment.yml
