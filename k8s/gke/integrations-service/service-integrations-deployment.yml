@@ -22,14 +22,14 @@ spec:
           image: <IMAGE-INTEGRATIONS-SERVICE>
           ports:
             - name: http
-              containerPort: 8005
+              containerPort: 8006
           readinessProbe:
             httpGet:
               path: /
               port: 8006
             initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 1
+            periodSeconds: 1800
+            timeoutSeconds: 1000
           resources:
             requests:
               cpu: 100m
