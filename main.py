@@ -27,7 +27,7 @@ app = FastAPI(
     #generate_unique_id_function=custom_generate_unique_id,
 )
 
-logfire.instrument_fastapi(app)
+
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
@@ -43,9 +43,11 @@ class IgnoreReadinessProbeMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         # Loga requisições para outros endpoints
         response = await call_next(request)
+
+        logfire.instrument_fastapi(app)
+
         logger.info(f"Request path: {request.url.path} status code: {response.status_code}")
         return response
-
 
 app.add_middleware(IgnoreReadinessProbeMiddleware)
 
