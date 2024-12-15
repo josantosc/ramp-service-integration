@@ -62,6 +62,8 @@ class Settings(BaseSettings):
     MEGA_DEFAULT_CREDENTIALS: str = Field("MEGA_DEFAULT_CREDENTIALS", env="MEGA_DEFAULT_CREDENTIALS")
     MEGA_INTANCE_DEFAULT: str = Field("MEGA_INTANCE_DEFAULT", env="MEGA_INTANCE_DEFAULT")
     EVOL_SERVER_VALIDATE_WHATS: str = Field("EVOL_SERVER_VALIDATE_WHATS", env="EVOL_SERVER_VALIDATE_WHATS")
+    LOGFIRE_TOKEN: str = Field("123", env="LOGFIRE_TOKEN")
+
 
     @computed_field  # type: ignore[misc]
     @property
