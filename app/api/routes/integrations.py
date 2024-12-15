@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import col, delete, func, select
@@ -27,20 +27,39 @@ from app.models.token_model import (
 )
 from app.utils.login import generate_new_account_email, send_email
 from app.services.service_factory import DisponibilidadeServiceFactory
-from app.schemas.integration_request import DisponibilidadeRequest
+from app.schemas.integration_request import DisponibilidadeRequest, DisponibilidadeDiaModel
 
 router = APIRouter()
 
 
 @router.get(
     "/balle/",
-    dependencies=[Depends(get_current_active_superuser)]
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=List[DisponibilidadeDiaModel]
 )
 async def get_disponibilidade(session: SessionDep, skip: int = 0, limit: int = 100,
                               params: DisponibilidadeRequest = Depends(),
                               client_id: int = Query(..., description="ID do cliente"),
                               codEstab: str = Query(..., description="Código do estabelecimento")
                               ):
+
+    """
+    Retorna a disponibilidade com base nos parâmetros fornecidos.
+
+    ## Parâmetros de Query
+    - **skip**: Número de registros a pular para paginação.
+    - **limit**: Número máximo de registros a retornar.
+    - **client_id**: ID do cliente.
+    - **codEstab**: Código do estabelecimento.
+
+    ## Parâmetros Adicionais
+    - **codEstab**: Código do Estabelecimento.
+    - **dtAgenda**: Data de Interesse (Formato: dd/mm/yyyy).
+    - **periodo**: ('todos', 'manha', 'tarde', 'noite') Turno de horários, 'todos' por padrão.
+    - **servicos**: Código do serviço do agendamento, em caso de vários serviços separar por vírgula.
+    - **tpAgd**: ('s'/'p') Tipo de Agendamento: visão de salas (s) ou profissionais (p), 'p' por padrão.
+    """
+
     service = DisponibilidadeServiceFactory.get_service(client_id, codEstab, session)
     return await service.get_disponibilidade(
         codEstab=params.codEstab,
