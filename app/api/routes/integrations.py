@@ -69,13 +69,11 @@ async def get_disponibilidade(session: SessionDep, skip: int = 0, limit: int = 1
         tpAgd=params.tpAgd,
     )
 
-@router.post(
+"""@router.post(
     "/balle/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
 )
 def create_agendamento(*, session: SessionDep, user_in: UserCreate) -> Any:
-    """
-    Create new user.
-    """
+
     user = get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
@@ -94,3 +92,4 @@ def create_agendamento(*, session: SessionDep, user_in: UserCreate) -> Any:
             html_content=email_data.html_content,
         )
     return user
+"""
