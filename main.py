@@ -25,7 +25,7 @@ app = FastAPI(
     #generate_unique_id_function=custom_generate_unique_id,
 )
 
-#logfire.instrument_fastapi(app)
+#21logfire.instrument_fastapi(app)
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:

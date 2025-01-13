@@ -27,69 +27,91 @@ from app.models.token_model import (
 )
 from app.utils.login import generate_new_account_email, send_email
 from app.services.service_factory import DisponibilidadeServiceFactory
-from app.schemas.integration_request import DisponibilidadeRequest, DisponibilidadeDiaModel
+from app.schemas.integration_request import DisponibilidadeRequest, DisponibilidadeDiaModel, PacienteRequest, \
+    BasePaciente, BaseCreatePaciente, CreatePacienteRequest, RequestCreateAgendamento
 
 router = APIRouter()
 
 
 @router.get(
-    "/balle/",
+    "/horario/",
     dependencies=[Depends(get_current_active_superuser)],
     response_model=List[DisponibilidadeDiaModel]
 )
 async def get_disponibilidade(session: SessionDep, skip: int = 0, limit: int = 100,
                               params: DisponibilidadeRequest = Depends(),
-                              client_id: int = Query(..., description="ID do cliente"),
-                              codEstab: str = Query(..., description="Código do estabelecimento")
+                              client_id: int = Query(..., description="ID do cliente")
                               ):
-
-    """
-    Retorna a disponibilidade com base nos parâmetros fornecidos.
-
-    ## Parâmetros de Query
-    - **skip**: Número de registros a pular para paginação.
-    - **limit**: Número máximo de registros a retornar.
-    - **client_id**: ID do cliente.
-    - **codEstab**: Código do estabelecimento.
-
-    ## Parâmetros Adicionais
-    - **codEstab**: Código do Estabelecimento.
-    - **dtAgenda**: Data de Interesse (Formato: dd/mm/yyyy).
-    - **periodo**: ('todos', 'manha', 'tarde', 'noite') Turno de horários, 'todos' por padrão.
-    - **servicos**: Código do serviço do agendamento, em caso de vários serviços separar por vírgula.
-    - **tpAgd**: ('s'/'p') Tipo de Agendamento: visão de salas (s) ou profissionais (p), 'p' por padrão.
-    """
-
-    service = DisponibilidadeServiceFactory.get_service(client_id, codEstab, session)
+    service = DisponibilidadeServiceFactory.get_service(client_id, params.cod_estab, session)
     return await service.get_disponibilidade(
-        codEstab=params.codEstab,
-        dtAgenda=params.dtAgenda,
+        cod_estab=params.cod_estab,
+        dt_agenda=params.dt_agenda,
         periodo=params.periodo,
         servicos=params.servicos,
-        tpAgd=params.tpAgd,
+        tp_agd=params.tp_agd,
     )
 
-"""@router.post(
-    "/balle/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
+
+@router.get(
+    "/paciente/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=List[BasePaciente]
 )
-def create_agendamento(*, session: SessionDep, user_in: UserCreate) -> Any:
+async def get_paciente(session: SessionDep, skip: int = 0, limit: int = 100,
+                       params: PacienteRequest = Depends(),
+                       client_id: int = Query(..., description="ID do cliente")
+                       ):
+    service = DisponibilidadeServiceFactory.get_paciente(client_id, params.cod_estab, session)
+    return await service.get_paciente(
+        cod_estab=params.cod_estab,
+        cpf=params.cpf,
+        email=params.email,
+        id=params.servicos,
+        celular=params.tpAgd,
+    )
 
-    user = get_user_by_email(session=session, email=user_in.email)
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system.",
-        )
 
-    user = create_user(session=session, user_create=user_in)
-    if settings.emails_enabled and user_in.email:
-        email_data = generate_new_account_email(
-            email_to=user_in.email, username=user_in.email, password=user_in.password
-        )
-        send_email(
-            email_to=user_in.email,
-            subject=email_data.subject,
-            html_content=email_data.html_content,
-        )
-    return user
-"""
+@router.post(
+    "/paciente/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=List[BaseCreatePaciente]
+)
+async def create_paciente(session: SessionDep,
+                          params: CreatePacienteRequest = Depends(),
+                          client_id: int = Query(..., description="ID do cliente")
+                          ):
+    service = DisponibilidadeServiceFactory.create_paciente(client_id, params.cod_estab, session)
+    return await service.create_paciente(
+        cod_estab=params.cod_estab,
+        cpf=params.cpf,
+        nome=params.nome,
+        celular=params.celular,
+        email=params.email,
+        observacao=params.observacao,
+        tp_origem=params.tp_origem,
+        cod_origem=params.cod_origem
+    )
+
+
+@router.post(
+    "/agendamento/",
+    dependencies=[Depends(get_current_active_superuser)],
+    #response_model=List[BaseCreatePaciente]
+)
+async def create_agendamento(session: SessionDep,
+                             body: RequestCreateAgendamento = Depends(),
+                             ):
+    service = DisponibilidadeServiceFactory.create_agendamento(body.cod_cli, str(body.cod_estab), session)
+    return await service.create_agendamento(
+        cod_cli=body.cod_cli,
+        cod_estab=body.cod_estab,
+        prof=body.prof,
+        dt_agd=body.dt_agd,
+        hri=body.hri,
+        serv=body.servicos,
+        cod_plano=body.cod_plano,
+        ag_sala=body.ag_sala,
+        cod_sala=body.cod_sala,
+        cod_vendedor=body.cod_vendedor,
+        cod_equipamento=body.cod_equipamento
+    )
